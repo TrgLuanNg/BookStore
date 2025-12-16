@@ -1,0 +1,108 @@
+﻿@model IEnumerable<BookStore.Models.Author>
+    @{
+    ViewData["Title"] = "Quản lý Tác giả";
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">✍️ Quản lý Tác giả</h2>
+        <button class="btn btn-success shadow-sm" onclick="openModal(0, '')">
+            <i class="fas fa-plus-circle me-2"></i>Thêm tác giả
+        </button>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="bg-light text-secondary">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Tên tác giả</th>
+                        <th class="text-end pe-4">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                {
+                    @foreach (var item in Model)
+                    {
+                    <tr id="row_@item.Id">
+                        <td class="ps-4 fw-bold">#@item.Id</td>
+                        <td class="fw-bold text-dark">@item.Name</td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-outline-primary me-1"
+                                    onclick="openModal(@item.Id, '@item.Name')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteAuthor(@item.Id)">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="3" class="text-center py-4">Chưa có dữ liệu</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="authorModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalTitle">Tác giả</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="a_id" value="0">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên tác giả</label>
+                        <input type="text" id="a_name" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="submitAuthor()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var modalAuth;
+        document.addEventListener("DOMContentLoaded", function () {
+            var el = document.getElementById('authorModal');
+            if (el) modalAuth = new bootstrap.Modal(el);
+        });
+
+        function openModal(id, name) {
+            $('#a_id').val(id);
+            $('#a_name').val(name);
+            $('#modalTitle').text(id === 0 ? "Thêm tác giả" : "Sửa tác giả");
+            modalAuth.show();
+        }
+
+        function submitAuthor() {
+            var id = parseInt($('#a_id').val());
+            var name = $('#a_name').val();
+            if (!name) return alert("Nhập tên tác giả!");
+
+            var url = id === 0 ? '/Admin/Author/Create' : '/Admin/Author/Edit';
+            $.post(url, { Id: id, Name: name }, function (res) {
+                if (res.success) location.reload();
+                else alert(res.message);
+            });
+        }
+
+        function deleteAuthor(id) {
+            if (confirm("Xóa tác giả này?")) {
+                $.post('/Admin/Author/Delete', { id: id }, function (res) {
+                    if (res.success) $('#row_' + id).remove();
+                    else alert("Lỗi: " + res.message);
+                });
+            }
+        }
+    </script>

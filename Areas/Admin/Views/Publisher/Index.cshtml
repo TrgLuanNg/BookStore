@@ -1,0 +1,122 @@
+﻿@model IEnumerable<BookStore.Models.Publisher>
+    @{
+    ViewData["Title"] = "Quản lý Nhà Xuất Bản";
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">🏢 Nhà Xuất Bản</h2>
+        <button class="btn btn-success shadow-sm" onclick="openModal(0, '', '')">
+            <i class="fas fa-plus-circle me-2"></i>Thêm NXB
+        </button>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover table-striped align-middle mb-0">
+                <thead class="bg-light text-secondary">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Tên NXB</th>
+                        <th>Email liên hệ</th>
+                        <th class="text-end pe-4">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                {
+                    @foreach (var item in Model)
+                    {
+                    <tr id="row_@item.Id">
+                        <td class="ps-4 fw-bold">#@item.Id</td>
+                        <td class="fw-bold text-dark">@item.Name</td>
+                        <td class="text-muted">@item.Email</td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-outline-primary me-1"
+                                    onclick="openModal(@item.Id, '@item.Name', '@item.Email')">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deletePub(@item.Id)">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    }
+                }
+                else
+                {
+                    <tr><td colspan="4" class="text-center py-4">Chưa có dữ liệu</td></tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="pubModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title" id="modalTitle">Nhà Xuất Bản</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="p_id" value="0">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên NXB <span class="text-danger">*</span></label>
+                        <input type="text" id="p_name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Email <span class="text-danger">*</span></label>
+                        <input type="email" id="p_email" class="form-control" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="submitPub()">Lưu thông tin</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var modalPub;
+        document.addEventListener("DOMContentLoaded", function () {
+            var el = document.getElementById('pubModal');
+            if (el) modalPub = new bootstrap.Modal(el);
+        });
+
+        function openModal(id, name, email) {
+            $('#p_id').val(id);
+            $('#p_name').val(name);
+            $('#p_email').val(email);
+            $('#modalTitle').text(id === 0 ? "Thêm NXB Mới" : "Cập nhật NXB");
+            modalPub.show();
+        }
+
+        function submitPub() {
+            var id = parseInt($('#p_id').val());
+            var name = $('#p_name').val();
+            var email = $('#p_email').val();
+
+            if (!name || !email) return alert("Vui lòng nhập đầy đủ thông tin!");
+
+            var url = id === 0 ? '/Admin/Publisher/Create' : '/Admin/Publisher/Edit';
+            var data = { Id: id, Name: name, Email: email };
+
+            $.post(url, data, function (res) {
+                if (res.success) {
+                    alert(res.message || "Thành công!");
+                    location.reload();
+                }
+                else alert("Lỗi: " + res.message);
+            });
+        }
+
+        function deletePub(id) {
+            if (confirm("Xóa Nhà xuất bản này? Nếu NXB đã có sách, bạn sẽ không thể xóa.")) {
+                $.post('/Admin/Publisher/Delete', { id: id }, function (res) {
+                    if (res.success) $('#row_' + id).remove();
+                    else alert(res.message);
+                });
+            }
+        }
+    </script>
