@@ -25,13 +25,13 @@ namespace BookStore.Models
         [Column("quantity")]
         public int Quantity { get; set; }
 
-        [Column("publisher_id")]
-        public int PublisherId { get; set; }
+        [Column("supplier_id")]
+        public int SupplierId { get; set; }
 
         // --- SỬA Ở ĐÂY ---
         // Vì DB không có cột mô tả, ta để NotMapped để tránh lỗi
-        [NotMapped]
-        public string Description { get; set; } = "Thông tin mô tả sách đang được cập nhật...";
+        [Column("description")] // <--- Ánh xạ vào cột mới tạo trong SQL
+        public string? Description { get; set; }
 
         [NotMapped]
         public string Author { get; set; } = "Đang cập nhật";

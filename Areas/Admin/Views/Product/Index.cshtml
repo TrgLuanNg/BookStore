@@ -50,7 +50,7 @@
                                 }
                         </td>
                         <td class="text-end pe-4">
-                            <button class="btn btn-sm btn-outline-primary me-1" title="Sửa">
+                            <button class="btn btn-sm btn-outline-primary me-1" title="Sửa" onclick="openEditModal(@item.Id)">
                                 <i class="fas fa-edit"></i>
                             </button>
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteProduct(@item.Id)" title="Xóa">
@@ -144,48 +144,167 @@
     </div>
 
     <script>
-        // Hàm mở Modal và tải dữ liệu Dropdown
-        function openCreateModal() {
-            // Gọi API lấy danh sách NXB, Tác giả, Thể loại
-            $.get('/Admin/Product/GetAuxData', function (res) {
+        var myModal;
+        var isEditMode = false; // Cờ đánh dấu đang Thêm hay Sửa
+        var currentEditingId = 0;
 
-                // 1. Điền Nhà xuất bản
+        $(document).ready(function () {
+            // Khởi tạo modal object
+            var modalEl = document.getElementById('createModal');
+            if (modalEl) myModal = new bootstrap.Modal(modalEl);
+        });
+
+        // 1. Hàm load dữ liệu Dropdown (dùng chung cho cả Thêm và Sửa)
+        function loadAuxData(callback) {
+            $.get('/Admin/Product/GetAuxData', function (res) {
+                // NXB
                 let pubHtml = '<option value="">-- Chọn NXB --</option>';
-                res.publishers.forEach(p => {
-                    pubHtml += `<option value="${p.id}">${p.name}</option>`;
-                });
+                if (res.publishers) {
+                    res.publishers.forEach(p => { pubHtml += `<option value="${p.id}">${p.name}</option>`; });
+                }
                 $('#p_publisher').html(pubHtml);
 
-                // 2. Điền Tác giả
+                // Tác giả
                 let authHtml = '';
-                res.authors.forEach(a => {
-                    authHtml += `<option value="${a.id}">${a.name}</option>`;
-                });
+                if (res.authors) {
+                    res.authors.forEach(a => { authHtml += `<option value="${a.id}">${a.name}</option>`; });
+                }
                 $('#p_authors').html(authHtml);
 
-                // 3. Điền Thể loại
+                // Thể loại
                 let catHtml = '';
-                res.categories.forEach(c => {
-                    catHtml += `<option value="${c.id}">${c.name}</option>`;
-                });
+                if (res.categories) {
+                    res.categories.forEach(c => { catHtml += `<option value="${c.id}">${c.name}</option>`; });
+                }
                 $('#p_categories').html(catHtml);
 
-                // Hiện Modal
-                var myModal = new bootstrap.Modal(document.getElementById('createModal'));
+                // Nhà cung cấp (Thêm mới)
+                let supHtml = '<option value="">-- Chọn NCC --</option>';
+                if (res.suppliers) {
+                    res.suppliers.forEach(s => { supHtml += `<option value="${s.id}">${s.name}</option>`; });
+                }
+                $('#p_supplier').html(supHtml);
+
+                if (callback) callback();
+            });
+        }
+
+        // 2. Mở Modal Thêm Mới
+        function openCreateModal() {
+            isEditMode = false;
+            currentEditingId = 0;
+
+            // Reset form
+            $('#createForm')[0].reset();
+            $('#p_image').val('images/product/image_1.jpg'); // Giá trị mặc định
+            $('.modal-title').html('<i class="fas fa-plus me-2"></i>Thêm sản phẩm mới');
+
+            loadAuxData(function () {
                 myModal.show();
             });
         }
 
-        // Hàm Gửi dữ liệu về Server (Thêm mới)
-        function submitCreate() {
-            // Lấy dữ liệu từ form
-            let data = {
-                Name: $('#p_name').val(),
-                Price: parseFloat($('#p_price').val()),
-                Quantity: parseInt($('#p_qty').val()),
-                ImagePath: $('#p_image').val() || 'images/default.jpg',
-                Description: $('#p_desc').val(),
-                PublisherId: parseInt($('#p_publisher').val()),
-                SupplierId: 1, // Tạm fix cứng, hoặc thêm dropdown Supplier nếu muốn
+        // 3. Mở Modal Sửa (Load dữ liệu cũ lên)
+        function openEditModal(id) {
+            isEditMode = true;
+            currentEditingId = id;
 
-        // Lấy danh
+            loadAuxData(function () {
+                // Gọi API lấy chi tiết sách
+                $.get('/Admin/Product/GetById?id=' + id, function (res) {
+                    if (res.success) {
+                        let d = res.data;
+
+                        // Điền dữ liệu vào form
+                        $('#p_name').val(d.name);
+                        $('#p_price').val(d.price);
+                        $('#p_qty').val(d.quantity);
+                        $('#p_image').val(d.imagePath);
+                        $('#p_desc').val(d.description);
+
+                        // Chọn đúng các Dropdown đơn
+                        $('#p_publisher').val(d.publisherId);
+                        $('#p_supplier').val(d.supplierId); // <--- Đã thêm dòng này để chọn lại NCC cũ
+
+                        // Điền tác giả và thể loại (Select multiple)
+                        if (res.authors) $('#p_authors').val(res.authors);
+                        if (res.categories) $('#p_categories').val(res.categories);
+
+                        $('.modal-title').html('<i class="fas fa-edit me-2"></i>Cập nhật sản phẩm');
+                        myModal.show();
+                    } else {
+                        alert(res.message);
+                    }
+                });
+            });
+        }
+
+        // 4. Gửi dữ liệu (Submit)
+        function submitCreate() {
+            // Thu thập dữ liệu
+            let formData = new FormData();
+
+            // Nếu đang sửa thì phải gửi kèm Id
+            if (isEditMode) {
+                formData.append("Id", currentEditingId);
+            }
+
+            formData.append("Name", $('#p_name').val());
+            formData.append("Price", $('#p_price').val());
+            formData.append("Quantity", $('#p_qty').val());
+            formData.append("ImagePath", $('#p_image').val());
+
+            // Dropdown đơn
+            formData.append("PublisherId", $('#p_publisher').val());
+            formData.append("SupplierId", $('#p_supplier').val());
+
+            // Mô tả (Đã bỏ comment để lưu mô tả)
+            formData.append("Description", $('#p_desc').val());
+
+            // Lấy danh sách ID tác giả (multiple select)
+            let selectedAuthors = $('#p_authors').val();
+            if (selectedAuthors) {
+                selectedAuthors.forEach(id => formData.append("authorIds", id));
+            }
+
+            // Lấy danh sách ID thể loại
+            let selectedCats = $('#p_categories').val();
+            if (selectedCats) {
+                selectedCats.forEach(id => formData.append("categoryIds", id));
+            }
+
+            let url = isEditMode ? '/Admin/Product/Edit' : '/Admin/Product/Create';
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (res) {
+                    if (res.success) {
+                        alert(res.message);
+                        location.reload(); // Tải lại trang để thấy dữ liệu mới
+                    } else {
+                        alert("Lỗi: " + res.message);
+                    }
+                },
+                error: function () {
+                    alert("Đã có lỗi xảy ra khi gọi server!");
+                }
+            });
+        }
+
+        // 5. Xóa sản phẩm
+        function deleteProduct(id) {
+            if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
+                $.post('/Admin/Product/Delete', { id: id }, function (res) {
+                    if (res.success) {
+                        $('#row_' + id).remove(); // Xóa dòng trong bảng HTML ngay lập tức
+                    } else {
+                        alert("Xóa thất bại. Có thể sản phẩm không tồn tại hoặc lỗi server.");
+                    }
+                });
+            }
+        }
+    </script>
