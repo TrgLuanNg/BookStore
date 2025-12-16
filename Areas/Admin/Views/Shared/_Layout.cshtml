@@ -1,0 +1,54 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin BookStore</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        .sidebar { min-height: 100vh; background: #343a40; color: white; }
+        .sidebar a { color: #adb5bd; text-decoration: none; padding: 10px 20px; display: block; }
+        .sidebar a:hover, .sidebar a.active { background: #495057; color: white; }
+        .content { padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="d-flex">
+        <div class="sidebar d-flex flex-column flex-shrink-0 p-3" style="width: 250px;">
+            <a href="/Admin/Dashboard" class="d-flex align-items-center mb-3 mb-md-0 me-md-auto text-white text-decoration-none">
+                <span class="fs-4 fw-bold">📚 Admin</span>
+            </a>
+            <hr>
+            <ul class="nav nav-pills flex-column mb-auto">
+                <li><a asp-area="Admin" asp-controller="Dashboard" asp-action="Index"><i class="fas fa-home me-2"></i> Tổng quan</a></li>
+                <li><a asp-area="Admin" asp-controller="Product" asp-action="Index"><i class="fas fa-book me-2"></i> Sản phẩm</a></li>
+                <li><a asp-area="Admin" asp-controller="Category" asp-action="Index"><i class="fas fa-list me-2"></i> Thể loại</a></li>
+                <li><a asp-area="Admin" asp-controller="Author" asp-action="Index"><i class="fas fa-pen-nib me-2"></i> Tác giả</a></li>
+                <li><a asp-area="Admin" asp-controller="Publisher" asp-action="Index"><i class="fas fa-building me-2"></i> NXB</a></li>
+                <li><a asp-area="Admin" asp-controller="Supplier" asp-action="Index"><i class="fas fa-truck me-2"></i> Nhà cung cấp</a></li>
+                <li><a asp-area="Admin" asp-controller="Order" asp-action="Index"><i class="fas fa-shopping-cart me-2"></i> Đơn hàng</a></li>
+                <li><a asp-area="Admin" asp-controller="Account" asp-action="Index"><i class="fas fa-users me-2"></i> Tài khoản</a></li>
+                <li><a asp-area="Admin" asp-controller="Discount" asp-action="Index"><i class="fas fa-tags me-2"></i> Mã giảm giá</a></li>
+                <li><a asp-area="Admin" asp-controller="Receipt" asp-action="Index"><i class="fas fa-file-import me-2"></i> Nhập hàng</a></li>
+            </ul>
+            <hr>
+            <div class="dropdown">
+                <a href="#" class="d-flex align-items-center text-white text-decoration-none dropdown-toggle" id="dropdownUser1" data-bs-toggle="dropdown" aria-expanded="false">
+                    <img src="https://via.placeholder.com/32" alt="" width="32" height="32" class="rounded-circle me-2">
+                    <strong>@User.Identity?.Name</strong>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-dark text-small shadow" aria-labelledby="dropdownUser1">
+                    <li><a class="dropdown-item" asp-area="Admin" asp-controller="Login" asp-action="Logout">Đăng xuất</a></li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="flex-grow-1 content bg-light">
+            @RenderBody()
+        </div>
+    </div>
+</body>
+</html>

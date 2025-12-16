@@ -1,0 +1,42 @@
+﻿@{ ViewData["Title"] = "Tổng quan"; }
+
+<h2 class="mb-4">Tổng quan hệ thống</h2>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white p-3">
+            <h3>Doanh thu</h3>
+            <p class="fs-4" id="stat-income">Loading...</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white p-3">
+            <h3>Đơn hàng</h3>
+            <p class="fs-4" id="stat-orders">Loading...</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark p-3">
+            <h3>Sản phẩm</h3>
+            <p class="fs-4" id="stat-products">Loading...</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white p-3">
+            <h3>Thành viên</h3>
+            <p class="fs-4" id="stat-users">Loading...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Gọi API lấy số liệu khi trang vừa load
+    $(document).ready(function() {
+        $.get('/Admin/Dashboard/GetStats', function(data) {
+            $('#stat-income').text(data.totalIncome.toLocaleString() + ' đ');
+            $('#stat-orders').text(data.totalOrders);
+            $('#stat-products').text(data.totalProducts);
+            $('#stat-users').text(data.totalAccounts);
+        });
+    });
+</script>

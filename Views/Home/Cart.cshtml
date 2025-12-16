@@ -1,0 +1,150 @@
+﻿@{ ViewData["Title"] = "Giỏ hàng"; }
+
+<div class="container py-5">
+    <h2 class="mb-4" style="font-family: 'Playfair Display', serif;">Giỏ hàng của bạn</h2>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="table-responsive">
+                <table class="table align-middle" id="cartTable">
+                    <thead class="table-light">
+                        <tr><th>Sách</th><th>Giá</th><th>SL</th><th>Tổng</th><th></th></tr>
+                    </thead>
+                    <tbody id="cartBody"></tbody>
+                </table>
+                <div id="emptyMsg" class="text-center py-5 d-none">
+                    <p class="text-muted">Giỏ hàng trống</p>
+                    <a href="/" class="btn btn-outline-dark">Mua sắm ngay</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="bg-light p-4 rounded shadow-sm">
+                <h4 class="mb-3">Thông tin giao hàng</h4>
+                <form id="checkoutForm" onsubmit="event.preventDefault(); submitOrder();">
+                    <div class="mb-3">
+                        <label>Họ và tên</label>
+                        <input type="text" id="txtName" class="form-control" required placeholder="Nguyễn Văn A">
+                    </div>
+                    <div class="mb-3">
+                        <label>Email (để nhận vé)</label>
+                        <input type="email" id="txtEmail" class="form-control" required placeholder="email@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label>Số điện thoại</label>
+                        <input type="text" id="txtPhone" class="form-control" required placeholder="0909xxxxxx">
+                    </div>
+                    <div class="mb-3">
+                        <label>Địa chỉ nhận hàng</label>
+                        <textarea id="txtAddress" class="form-control" rows="2" required placeholder="Số nhà, đường, phường, quận..."></textarea>
+                    </div>
+
+                    <hr>
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="h5 fw-bold">Tổng thanh toán:</span>
+                        <span id="finalTotal" class="h5 fw-bold text-danger">0 đ</span>
+                    </div>
+
+                    <button type="submit" id="btnCheckout" class="btn btn-dark w-100 py-3 fw-bold text-uppercase">
+                        Xác nhận đặt hàng
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Code quản lý giỏ hàng cũ (RenderCart, UpdateQty...) GIỮ NGUYÊN ---
+    let cart = JSON.parse(localStorage.getItem("BOOK_CART")) || [];
+    const cartBody = document.getElementById("cartBody");
+
+    function renderCart() {
+        // ... (Copy lại hàm renderCart từ câu trả lời trước) ...
+        // Đảm bảo cập nhật innerText của #finalTotal ở đây
+        cartBody.innerHTML = "";
+        let total = 0;
+        if (cart.length === 0) {
+            document.getElementById("emptyMsg").classList.remove("d-none");
+            document.getElementById("cartTable").classList.add("d-none");
+            document.getElementById("btnCheckout").disabled = true;
+        } else {
+            document.getElementById("emptyMsg").classList.add("d-none");
+            document.getElementById("cartTable").classList.remove("d-none");
+            document.getElementById("btnCheckout").disabled = false;
+        }
+
+        cart.forEach((item, index) => {
+            let sub = item.price * item.quantity;
+            total += sub;
+            cartBody.innerHTML += `
+                <tr>
+                    <td><img src="${item.image}" width="40" class="me-2"> ${item.name}</td>
+                    <td>${item.price.toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-light border" onclick="updateQty(${index}, -1)">-</button>
+                        <span class="mx-2">${item.quantity}</span>
+                        <button class="btn btn-sm btn-light border" onclick="updateQty(${index}, 1)">+</button>
+                    </td>
+                    <td>${sub.toLocaleString()}</td>
+                    <td><i class="fas fa-times text-danger cursor-pointer" onclick="removeItem(${index})"></i></td>
+                </tr>
+            `;
+        });
+        document.getElementById("finalTotal").innerText = total.toLocaleString() + " đ";
+    }
+
+    function updateQty(index, change) {
+        if (cart[index].quantity + change > 0 && cart[index].quantity + change <= cart[index].maxStock) {
+            cart[index].quantity += change;
+            saveAndRender();
+        }
+    }
+    function removeItem(index) { cart.splice(index, 1); saveAndRender(); }
+    function saveAndRender() { localStorage.setItem("BOOK_CART", JSON.stringify(cart)); renderCart(); }
+
+    renderCart();
+
+    // --- FUNCTION GỌI API ĐẶT HÀNG ---
+    async function submitOrder() {
+        if (cart.length === 0) return alert("Giỏ hàng trống!");
+
+        const btn = document.getElementById("btnCheckout");
+        const originalText = btn.innerText;
+        btn.innerText = "Đang xử lý...";
+        btn.disabled = true;
+
+        const orderData = {
+            fullName: document.getElementById("txtName").value,
+            phone: document.getElementById("txtPhone").value,
+            address: document.getElementById("txtAddress").value,
+            email: document.getElementById("txtEmail").value,
+            items: cart.map(item => ({ id: item.id, quantity: item.quantity, price: item.price }))
+        };
+
+        try {
+            const response = await fetch('/Home/Checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(orderData)
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                alert("🎉 Đặt hàng thành công! Vui lòng kiểm tra email.");
+                localStorage.removeItem("BOOK_CART");
+                window.location.href = "/";
+            } else {
+                alert("Lỗi: " + result.message);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Có lỗi xảy ra khi kết nối server.");
+        } finally {
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    }
+</script>
