@@ -1,0 +1,92 @@
+﻿@model IEnumerable<BookStore.Models.Discount>
+    @{ ViewData["Title"] = "Mã Giảm Giá"; }
+
+    <div class="d-flex justify-content-between mb-4">
+        <h2 class="text-primary fw-bold">🎟️ Mã Giảm Giá</h2>
+        <button class="btn btn-primary" onclick="openModal(0)"><i class="fas fa-plus"></i> Tạo mã mới</button>
+    </div>
+
+    <div class="card shadow border-0">
+        <table class="table table-striped align-middle mb-0">
+            <thead class="bg-light">
+                <tr>
+                    <th class="ps-4">Mã Code</th>
+                    <th>Giảm (%)</th>
+                    <th>Số lượng</th>
+                    <th>Hạn dùng</th>
+                    <th class="text-end pe-4">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null) {
+                @foreach (var item in Model) {
+                <tr id="row_@item.Id">
+                    <td class="ps-4 fw-bold text-success">@item.Code</td>
+                    <td>@item.Percentage %</td>
+                    <td>@item.Quantity</td>
+                    <td>
+                        @if(item.EndDate < DateTime.Now) { <span class="text-danger">Đã hết hạn</span> }
+                        else { <span>@item.EndDate.ToString("dd/MM/yyyy")</span> }
+                    </td>
+                    <td class="text-end pe-4">
+                        <button class="btn btn-sm btn-outline-primary" onclick="openModal(@item.Id)">Sửa</button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(@item.Id)">Xóa</button>
+                    </td>
+                </tr>
+                }
+             }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal fade" id="discountModal">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Mã giảm giá</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3"><label>Mã Code</label><input type="text" id="d_code" class="form-control text-uppercase"></div>
+                    <div class="row">
+                        <div class="col-6 mb-3"><label>Phần trăm giảm</label><input type="number" id="d_percent" class="form-control"></div>
+                        <div class="col-6 mb-3"><label>Số lượng</label><input type="number" id="d_qty" class="form-control"></div>
+                    </div>
+                    <div class="mb-3"><label>Ngày hết hạn</label><input type="date" id="d_date" class="form-control"></div>
+                    <input type="hidden" id="d_id">
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" onclick="saveDiscount()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        var modalDisc;
+        document.addEventListener("DOMContentLoaded", () => modalDisc = new bootstrap.Modal(document.getElementById('discountModal')));
+
+        function openModal(id) {
+            $('#d_id').val(id);
+            if (id === 0) { $('#d_code').val(''); $('#d_percent').val(''); $('#d_qty').val(''); modalDisc.show(); }
+            else {
+                // Logic gọi API GetById để điền dữ liệu (Tự bổ sung controller)
+                // Tạm thời hiển thị modal trống để demo
+                modalDisc.show();
+            }
+        }
+
+        function saveDiscount() {
+            let data = {
+                Id: $('#d_id').val(),
+                Code: $('#d_code').val(),
+                Percentage: $('#d_percent').val(),
+                Quantity: $('#d_qty').val(),
+                EndDate: $('#d_date').val()
+            };
+            let url = data.Id == 0 ? '/Admin/Discount/Create' : '/Admin/Discount/Edit';
+            $.post(url, data, function (res) { if (res.success) location.reload(); else alert(res.message); });
+        }
+
+        function deleteItem(id) { /* Tương tự các view trên */ }
+    </script>

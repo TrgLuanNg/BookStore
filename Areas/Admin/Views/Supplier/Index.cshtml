@@ -1,0 +1,115 @@
+﻿@model IEnumerable<BookStore.Models.Supplier>
+    @{ ViewData["Title"] = "Quản lý Nhà cung cấp"; }
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary fw-bold">🏭 Nhà Cung Cấp</h2>
+        <button class="btn btn-success" onclick="openModal(0)">
+            <i class="fas fa-plus-circle me-2"></i>Thêm NCC
+        </button>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">ID</th>
+                        <th>Tên NCC</th>
+                        <th>Email</th>
+                        <th>SĐT</th>
+                        <th class="text-end pe-4">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any()) {
+                    @foreach (var item in Model) {
+                    <tr id="row_@item.Id">
+                        <td class="ps-4">#@item.Id</td>
+                        <td class="fw-bold">@item.Name</td>
+                        <td>@item.Email</td>
+                        <td>@item.Phone</td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-outline-primary" onclick="openModal(@item.Id)">Sửa</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(@item.Id)">Xóa</button>
+                        </td>
+                    </tr>
+                    }
+                } else {
+                    <tr><td colspan="5" class="text-center py-4">Chưa có dữ liệu</td></tr>
+ }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="supplierModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Thông tin Nhà cung cấp</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formSupplier">
+                        <input type="hidden" id="s_id" value="0">
+                        <div class="mb-3"><label>Tên NCC</label><input type="text" id="s_name" class="form-control" required></div>
+                        <div class="mb-3"><label>Email</label><input type="email" id="s_email" class="form-control"></div>
+                        <div class="mb-3"><label>Số điện thoại</label><input type="text" id="s_phone" class="form-control"></div>
+                        <div class="mb-3"><label>Địa chỉ</label><textarea id="s_address" class="form-control"></textarea></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="submitData()">Lưu</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Logic tương tự các trang khác, gọi API Create/Edit của SupplierController
+        var myModal;
+        document.addEventListener("DOMContentLoaded", () => myModal = new bootstrap.Modal(document.getElementById('supplierModal')));
+
+        function openModal(id) {
+            $('#s_id').val(id);
+            if (id > 0) {
+                // Gọi API lấy chi tiết để điền vào form (Cần viết thêm GetById trong Controller)
+                $.get('/Admin/Supplier/GetById?id=' + id, function (res) {
+                    if (res.success) {
+                        $('#s_name').val(res.data.name);
+                        $('#s_email').val(res.data.email);
+                        $('#s_phone').val(res.data.phone);
+                        $('#s_address').val(res.data.address);
+                        myModal.show();
+                    }
+                });
+            } else {
+                $('#formSupplier')[0].reset();
+                myModal.show();
+            }
+        }
+
+        function submitData() {
+            let data = {
+                Id: $('#s_id').val(),
+                Name: $('#s_name').val(),
+                Email: $('#s_email').val(),
+                Phone: $('#s_phone').val(),
+                Address: $('#s_address').val()
+            };
+            let url = data.Id == 0 ? '/Admin/Supplier/Create' : '/Admin/Supplier/Edit';
+            $.post(url, data, function (res) {
+                if (res.success) location.reload();
+                else alert(res.message);
+            });
+        }
+
+        function deleteItem(id) {
+            if (confirm('Xóa nhà cung cấp này?')) {
+                $.post('/Admin/Supplier/Delete', { id: id }, function (res) {
+                    if (res.success) $('#row_' + id).remove(); else alert(res.message);
+                });
+            }
+        }
+    </script>

@@ -1,0 +1,98 @@
+﻿@model IEnumerable<BookStore.Models.Order>
+    @{ ViewData["Title"] = "Quản lý Đơn hàng"; }
+
+    <h2 class="text-primary fw-bold mb-4">📦 Quản lý Đơn hàng</h2>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <table class="table table-hover align-middle">
+                <thead class="bg-light">
+                    <tr>
+                        <th>Mã ĐH</th>
+                        <th>Khách hàng</th>
+                        <th>Ngày đặt</th>
+                        <th>Tổng tiền</th>
+                        <th>Trạng thái</th>
+                        <th class="text-end pe-4">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any()) {
+                    @foreach (var item in Model) {
+                    <tr id="order_@item.Id">
+                        <td class="fw-bold">#@item.Id</td>
+                        <td>
+                            <div>@item.FullName</div>
+                            <small class="text-muted">@item.Phone</small>
+                        </td>
+                        <td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-danger fw-bold">@item.TotalAmount.ToString("#,##0") đ</td>
+                        <td id="status_@item.Id">
+                            @if(item.Status == 1) { <span class="badge bg-warning text-dark">Chờ duyệt</span> }
+                                else if(item.Status == 2) { <span class="badge bg-success">Đã duyệt (Đã trừ kho)</span> }
+                                else { <span class="badge bg-danger">Đã hủy</span> }
+                        </td>
+                        <td class="text-end pe-4">
+                            <button class="btn btn-sm btn-info text-white" onclick="viewDetails(@item.Id)">Xem CT</button>
+
+                            @if(item.Status == 1)
+                                {
+                            <button class="btn btn-sm btn-success ms-1" onclick="approveOrder(@item.Id)">
+                                <i class="fas fa-check"></i> Duyệt
+                            </button>
+                            <button class="btn btn-sm btn-danger ms-1" onclick="cancelOrder(@item.Id)">Hủy</button>
+                                }
+                        </td>
+                    </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal fade" id="orderDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Chi tiết đơn hàng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="orderDetailContent">
+                    Đang tải...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Hàm Duyệt Đơn - QUAN TRỌNG
+        function approveOrder(id) {
+            if (confirm("Duyệt đơn hàng này? Hệ thống sẽ tự động trừ số lượng sách trong kho.")) {
+                $.post('/Admin/Order/Approve', { id: id }, function (res) {
+                    if (res.success) {
+                        alert("Đã duyệt đơn và cập nhật kho hàng!");
+                        location.reload();
+                    } else {
+                        alert("Lỗi: " + res.message); // Có thể báo lỗi nếu kho không đủ hàng
+                    }
+                });
+            }
+        }
+
+        // Hàm Hủy đơn
+        function cancelOrder(id) {
+            if (confirm("Hủy đơn hàng này?")) {
+                $.post('/Admin/Order/Cancel', { id: id }, function (res) {
+                    if (res.success) location.reload();
+                });
+            }
+        }
+
+        // Xem chi tiết (Cần Action GetOrderDetails trong Controller trả về PartialView hoặc JSON)
+        function viewDetails(id) {
+            var modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+            $('#orderDetailContent').load('/Admin/Order/GetOrderDetails?id=' + id);
+            modal.show();
+        }
+    </script>

@@ -1,0 +1,130 @@
+﻿@model BookStore.Models.GoodsReceipt
+@{ ViewData["Title"] = "Tạo Phiếu Nhập Hàng"; }
+
+<div class="container-fluid">
+    <h2 class="text-primary fw-bold mb-3">📥 Nhập kho sách</h2>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white fw-bold">Thông tin chung</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label>Nhà cung cấp</label>
+                        <select id="SupplierId" class="form-select">
+                            <option value="">-- Chọn NCC --</option>
+                            @if(ViewBag.Suppliers != null) {
+                                foreach(var item in ViewBag.Suppliers) {
+                            <option value="@item.Id">@item.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label>Ghi chú</label>
+                        <textarea id="Notes" class="form-control" rows="3"></textarea>
+                    </div>
+                    <button class="btn btn-primary w-100" onclick="submitReceipt()">
+                        <i class="fas fa-save me-2"></i>Lưu Phiếu & Cập nhật Kho
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <span class="fw-bold">Chi tiết nhập hàng</span>
+                    <button class="btn btn-sm btn-success" onclick="addRow()">+ Thêm dòng</button>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-bordered mb-0" id="tblDetails">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%">Sách</th>
+                                <th style="width: 20%">Số lượng nhập</th>
+                                <th style="width: 25%">Giá nhập</th>
+                                <th style="width: 15%"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Load danh sách sách để chọn (Biến global)
+    var bookOptions = '<option value="">Chọn sách...</option>';
+
+    $(document).ready(function () {
+        // Gọi API lấy list sách gọn nhẹ
+        $.get('/Admin/Product/GetAuxData', function (res) {
+            // Giả sử API trả về list categories, authors, nhưng ta cần BOOKS
+            // Bạn cần sửa API Product/GetAuxData để trả về cả list Books: { Id, Name }
+            // Demo tạm logic:
+            if (res.books) {
+                res.books.forEach(b => {
+                    bookOptions += `<option value="${b.id}">${b.name}</option>`;
+                });
+            }
+            addRow(); // Thêm 1 dòng đầu tiên
+        });
+    });
+
+    function addRow() {
+        let html = `
+            <tr class="item-row">
+                <td><select class="form-select book-select">${bookOptions}</select></td>
+                <td><input type="number" class="form-control qty" value="1" min="1"></td>
+                <td><input type="number" class="form-control price" value="0"></td>
+                <td class="text-center"><button class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()">Xóa</button></td>
+            </tr>
+        `;
+        $('#tblDetails tbody').append(html);
+    }
+
+    function submitReceipt() {
+        let supplierId = $('#SupplierId').val();
+        if (!supplierId) { alert("Vui lòng chọn Nhà cung cấp"); return; }
+
+        let details = [];
+        $('#tblDetails tbody tr').each(function () {
+            let row = $(this);
+            let bookId = row.find('.book-select').val();
+            let qty = row.find('.qty').val();
+            let price = row.find('.price').val();
+
+            if (bookId && qty > 0) {
+                details.push({ ProductId: bookId, Quantity: qty, ImportPrice: price });
+            }
+        });
+
+        if (details.length === 0) { alert("Chưa nhập cuốn sách nào!"); return; }
+
+        let data = {
+            SupplierId: supplierId,
+            Notes: $('#Notes').val(),
+            Details: details
+        };
+
+        // Gửi về Server xử lý (Tạo phiếu + Cộng dồn kho)
+        $.ajax({
+            url: '/Admin/Receipt/Create',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(data),
+            success: function (res) {
+                if (res.success) {
+                    alert("Nhập hàng thành công! Kho đã được cập nhật.");
+                    location.href = '/Admin/Receipt/Index'; // Quay về danh sách
+                } else {
+                    alert("Lỗi: " + res.message);
+                }
+            }
+        });
+    }
+</script>
