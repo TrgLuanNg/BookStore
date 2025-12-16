@@ -170,6 +170,24 @@ namespace BookStore.Areas.Admin.Controllers
             }
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAllForReceipt()
+        {
+            // Chỉ lấy các thông tin cần thiết: Id, Tên, Tồn kho, Giá
+            var books = await _context.Books
+                .Select(b => new {
+                    b.Id,
+                    b.Name,
+                    b.Quantity,
+                    b.Price,
+                    b.ImagePath
+                })
+                .OrderByDescending(b => b.Id)
+                .ToListAsync();
+
+            return Json(new { success = true, data = books });
+        }
+
         public IActionResult GetAuxData()
         {
             return Json(new
