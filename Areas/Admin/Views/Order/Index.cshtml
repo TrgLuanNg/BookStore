@@ -1,4 +1,4 @@
-﻿@model IEnumerable<BookStore.Models.Order>
+﻿@model IEnumerable<BookStore.Models.OrderViewModel>
     @{ ViewData["Title"] = "Quản lý Đơn hàng"; }
 
     <h2 class="text-primary fw-bold mb-4">📦 Quản lý Đơn hàng</h2>
@@ -22,14 +22,14 @@
                     <tr id="order_@item.Id">
                         <td class="fw-bold">#@item.Id</td>
                         <td>
-                            <div>@item.FullName</div>
+                            <div class="fw-bold">@item.FullName</div>
                             <small class="text-muted">@item.Phone</small>
                         </td>
                         <td>@item.OrderDate.ToString("dd/MM/yyyy HH:mm")</td>
                         <td class="text-danger fw-bold">@item.TotalAmount.ToString("#,##0") đ</td>
                         <td id="status_@item.Id">
                             @if(item.Status == 1) { <span class="badge bg-warning text-dark">Chờ duyệt</span> }
-                                else if(item.Status == 2) { <span class="badge bg-success">Đã duyệt (Đã trừ kho)</span> }
+                                else if(item.Status == 2) { <span class="badge bg-success">Đã duyệt</span> }
                                 else { <span class="badge bg-danger">Đã hủy</span> }
                         </td>
                         <td class="text-end pe-4">
@@ -37,9 +37,7 @@
 
                             @if(item.Status == 1)
                                 {
-                            <button class="btn btn-sm btn-success ms-1" onclick="approveOrder(@item.Id)">
-                                <i class="fas fa-check"></i> Duyệt
-                            </button>
+                            <button class="btn btn-sm btn-success ms-1" onclick="approveOrder(@item.Id)">Duyệt</button>
                             <button class="btn btn-sm btn-danger ms-1" onclick="cancelOrder(@item.Id)">Hủy</button>
                                 }
                         </td>
@@ -51,36 +49,14 @@
         </div>
     </div>
 
-    <div class="modal fade" id="orderDetailModal" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Chi tiết đơn hàng</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body" id="orderDetailContent">
-                    Đang tải...
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script>
-        // Hàm Duyệt Đơn - QUAN TRỌNG
         function approveOrder(id) {
-            if (confirm("Duyệt đơn hàng này? Hệ thống sẽ tự động trừ số lượng sách trong kho.")) {
+            if (confirm("Duyệt đơn hàng và trừ kho?")) {
                 $.post('/Admin/Order/Approve', { id: id }, function (res) {
-                    if (res.success) {
-                        alert("Đã duyệt đơn và cập nhật kho hàng!");
-                        location.reload();
-                    } else {
-                        alert("Lỗi: " + res.message); // Có thể báo lỗi nếu kho không đủ hàng
-                    }
+                    if (res.success) location.reload(); else alert("Lỗi: " + res.message);
                 });
             }
         }
-
-        // Hàm Hủy đơn
         function cancelOrder(id) {
             if (confirm("Hủy đơn hàng này?")) {
                 $.post('/Admin/Order/Cancel', { id: id }, function (res) {
@@ -88,11 +64,15 @@
                 });
             }
         }
-
-        // Xem chi tiết (Cần Action GetOrderDetails trong Controller trả về PartialView hoặc JSON)
         function viewDetails(id) {
-            var modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
-            $('#orderDetailContent').load('/Admin/Order/GetOrderDetails?id=' + id);
-            modal.show();
+            // Logic hiển thị modal chi tiết (gọi API GetDetails)
+            $.get('/Admin/Order/GetDetails?id=' + id, function (res) {
+                let html = "<ul>";
+                res.forEach(item => {
+                    html += `<li>${item.name} - SL: ${item.quantity} - Giá: ${item.price}</li>`;
+                });
+                html += "</ul>";
+                alert("Chi tiết đơn hàng:\n" + JSON.stringify(res, null, 2)); // Tạm thời alert
+            });
         }
     </script>
