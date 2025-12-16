@@ -25,8 +25,21 @@
                     <td>@item.Value.ToString("#,##0") đ</td>
                     <td>@item.Quantity</td>
                     <td>
-                        @if(item.DateEnd < DateTime.Now) { <span class="text-danger">Đã hết hạn</span> }
-                        else { <span>@item.DateEnd.ToString("dd/MM/yyyy")</span> }
+                        @{
+                            // Logic kiểm tra ngày hết hạn an toàn với DateTime?
+                            if (item.DateEnd.HasValue && item.DateEnd.Value < DateTime.Now)
+                            {
+                            <span class="text-danger">Đã hết hạn (@item.DateEnd.Value.ToString("dd/MM/yyyy"))</span>
+                            }
+                            else if (item.DateEnd.HasValue)
+                            {
+                            <span>@item.DateEnd.Value.ToString("dd/MM/yyyy")</span>
+                            }
+                            else
+                            {
+                            <span class="text-success">Vô thời hạn</span>
+                            }
+                        }
                     </td>
                     <td class="text-end pe-4">
                         <button class="btn btn-sm btn-outline-primary" onclick="openModal('@item.Code')">Sửa</button>
@@ -75,9 +88,11 @@
                 $('#d_code').val('').prop('readonly', false);
                 $('#d_value').val('');
                 $('#d_qty').val('');
+                $('#d_date').val('');
                 $('#is_edit').val('0');
             } else {
                 // Sửa (Cần lấy thông tin chi tiết, tạm thời gán cứng để demo)
+                // Bạn có thể bổ sung API GetById ở Controller để lấy dữ liệu thực
                 $('#d_code').val(code).prop('readonly', true);
                 $('#is_edit').val('1');
             }
@@ -90,7 +105,7 @@
                 Code: $('#d_code').val(),
                 Value: $('#d_value').val(),
                 Quantity: $('#d_qty').val(),
-                DateEnd: $('#d_date').val()
+                DateEnd: $('#d_date').val() ? $('#d_date').val() : null // Cho phép null
             };
             $.post(url, data, function (res) { if (res.success) location.reload(); else alert(res.message); });
         }

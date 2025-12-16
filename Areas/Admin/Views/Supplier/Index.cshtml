@@ -27,7 +27,7 @@
                         <td class="ps-4">#@item.Id</td>
                         <td class="fw-bold">@item.Name</td>
                         <td>@item.Email</td>
-                        <td>@item.numberPhone</td>
+                        <td>@item.NumberPhone</td>
                         <td class="text-end pe-4">
                             <button class="btn btn-sm btn-outline-primary" onclick="openModal(@item.Id)">Sửa</button>
                             <button class="btn btn-sm btn-outline-danger" onclick="deleteItem(@item.Id)">Xóa</button>
@@ -67,19 +67,19 @@
     </div>
 
     <script>
-        // Logic tương tự các trang khác, gọi API Create/Edit của SupplierController
         var myModal;
         document.addEventListener("DOMContentLoaded", () => myModal = new bootstrap.Modal(document.getElementById('supplierModal')));
 
         function openModal(id) {
             $('#s_id').val(id);
             if (id > 0) {
-                // Gọi API lấy chi tiết để điền vào form (Cần viết thêm GetById trong Controller)
                 $.get('/Admin/Supplier/GetById?id=' + id, function (res) {
                     if (res.success) {
                         $('#s_name').val(res.data.name);
                         $('#s_email').val(res.data.email);
-                        $('#s_phone').val(res.data.phone);
+                        // Chú ý: Dữ liệu trả về từ JSON thường là camelCase (chữ đầu viết thường)
+                        // Nếu controller trả về Json(data), thuộc tính sẽ là numberPhone
+                        $('#s_phone').val(res.data.numberPhone || res.data.NumberPhone);
                         $('#s_address').val(res.data.address);
                         myModal.show();
                     }
@@ -95,7 +95,7 @@
                 Id: $('#s_id').val(),
                 Name: $('#s_name').val(),
                 Email: $('#s_email').val(),
-                Phone: $('#s_phone').val(),
+                NumberPhone: $('#s_phone').val(), // Truyền đúng tên thuộc tính cho Controller
                 Address: $('#s_address').val()
             };
             let url = data.Id == 0 ? '/Admin/Supplier/Create' : '/Admin/Supplier/Edit';

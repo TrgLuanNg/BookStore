@@ -4,114 +4,83 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BookStore.Models
 {
+    // 1. Nhà cung cấp (Suppliers)
     [Table("suppliers")]
     public class Supplier
     {
         [Key][Column("id")] public int Id { get; set; }
         [Required][Column("name")] public string Name { get; set; } = "";
-        [Column("email")] public string Email { get; set; } = "";
-        [Column("address")] public string Address { get; set; } = "";
-        [Column("number_phone")] public string NumberPhone { get; set; } = ""; // Sửa: Khớp tên biến
+        [Column("email")] public string? Email { get; set; }
+        [Column("address")] public string? Address { get; set; }
+        [Column("number_phone")] public string? NumberPhone { get; set; }
         [Column("status")] public int Status { get; set; } = 1;
     }
 
-    // 3. Mã giảm giá (Discounts)
+    // 2. Mã giảm giá (Discounts)
     [Table("discounts")]
     public class Discount
     {
         [Key][Column("discount_code")] public string Code { get; set; } = "";
         [Column("discount_value")] public int Value { get; set; }
         [Column("quantity")] public int Quantity { get; set; }
-        [Column("date_start")] public DateTime DateStart { get; set; }
-        [Column("date_end")] public DateTime DateEnd { get; set; }
+        [Column("date_start")] public DateTime? DateStart { get; set; }
+        [Column("date_end")] public DateTime? DateEnd { get; set; }
         [Column("status")] public int Status { get; set; } = 1;
     }
 
-    // 4. Quyền hạn (Functions) - Danh sách các chức năng hệ thống
+    // 3. Quyền hạn
     [Table("functions")]
     public class Function
     {
-        [Key]
-        [Column("id")]
-        public int Id { get; set; }
-
-        [Column("name")]
-        public string Name { get; set; }
-
-        [Column("description")]
-        public string Description { get; set; }
+        [Key][Column("id")] public int Id { get; set; }
+        [Column("name")] public string Name { get; set; } = "";
+        [Column("description")] public string? Description { get; set; }
     }
 
-    // 5. Chi tiết phân quyền (FunctionDetails) - Role nào được làm gì
     [Table("function_details")]
     public class FunctionDetail
     {
-        [Key]
-        [Column("id")]
-        public int Id { get; set; }
-
-        [Column("role_id")]
-        public int RoleId { get; set; }
-
-        [Column("function_id")]
-        public int FunctionId { get; set; }
-
-        [Column("action")]
-        public bool Action { get; set; } // 1: Được phép, 0: Cấm
+        [Key][Column("id")] public int Id { get; set; }
+        [Column("role_id")] public int RoleId { get; set; }
+        [Column("function_id")] public int FunctionId { get; set; }
+        [Column("action")] public bool Action { get; set; }
     }
 
-    // 6. Phiếu nhập hàng (GoodsReceipts)
+    // 4. Phiếu nhập hàng
     [Table("goodsreceipts")]
     public class GoodsReceipt
     {
-        [Key]
-        [Column("id")]
-        public int Id { get; set; }
-
-        [Column("staff_id")] // Lưu username của admin/staff nhập hàng
-        public string StaffId { get; set; }
-
-        [Column("total_price")]
-        public double TotalPrice { get; set; }
-
-        [Column("date_create")]
-        public DateTime DateCreate { get; set; } = DateTime.Now;
+        [Key][Column("id")] public int Id { get; set; }
+        [Column("staff_id")] public string StaffId { get; set; } = "admin";
+        [Column("total_price")] public double TotalPrice { get; set; }
+        [Column("date_create")] public DateTime DateCreate { get; set; } = DateTime.Now;
     }
 
-    // 7. Chi tiết phiếu nhập (GoodsReceiptDetails)
     [Table("goodsreceipt_details")]
-    [PrimaryKey(nameof(GoodsReceiptId), nameof(ProductId))] // Khóa chính phức hợp
+    [PrimaryKey(nameof(GoodsReceiptId), nameof(ProductId))]
     public class GoodsReceiptDetail
     {
-        [Column("goodsreceipt_id")]
-        public int GoodsReceiptId { get; set; }
-
-        [Column("product_id")]
-        public int ProductId { get; set; }
-
-        [Column("quantity")]
-        public int Quantity { get; set; }
-
-        [Column("input_price")]
-        public double InputPrice { get; set; }
+        [Column("goodsreceipt_id")] public int GoodsReceiptId { get; set; }
+        [Column("product_id")] public int ProductId { get; set; }
+        [Column("quantity")] public int Quantity { get; set; }
+        [Column("input_price")] public double InputPrice { get; set; }
     }
 
-    // 8. DTO (Data Transfer Object) - Class phụ để nhận dữ liệu từ Form (Không tạo bảng trong DB)
+    // 5. DTOs
     public class ProductCreateDTO
     {
         public int Id { get; set; }
-        public string Name { get; set; }
+        public string Name { get; set; } = "";
         public double Price { get; set; }
-        public string ImagePath { get; set; }
+        public string ImagePath { get; set; } = "";
         public int Quantity { get; set; }
         public int PublisherId { get; set; }
         public int SupplierId { get; set; }
-        public string Description { get; set; }
-        public List<int> AuthorIds { get; set; }    // Nhận danh sách ID tác giả
-        public List<int> CategoryIds { get; set; }  // Nhận danh sách ID thể loại
+        public string? Description { get; set; }
+        public List<int> AuthorIds { get; set; } = new();
+        public List<int> CategoryIds { get; set; } = new();
     }
 
-    // DTO cho nhập hàng
     public class ReceiptDTO
     {
         public int ProductId { get; set; }
@@ -119,6 +88,7 @@ namespace BookStore.Models
         public double Price { get; set; }
     }
 
+    // --- BỔ SUNG CLASS NÀY ĐỂ FIX LỖI ---
     public class OrderViewModel
     {
         public int Id { get; set; }
