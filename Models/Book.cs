@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 
 namespace BookStore.Models
 {
@@ -25,17 +26,21 @@ namespace BookStore.Models
         [Column("quantity")]
         public int Quantity { get; set; }
 
+        [Column("publisher_id")]
+        public int PublisherId { get; set; }
+
+        // --- BỔ SUNG: SupplierId (Nhà cung cấp) ---
         [Column("supplier_id")]
         public int SupplierId { get; set; }
 
-        // --- SỬA Ở ĐÂY ---
-        // Vì DB không có cột mô tả, ta để NotMapped để tránh lỗi
-        [Column("description")] // <--- Ánh xạ vào cột mới tạo trong SQL
+        // --- SỬA: Description (Cho phép Null để tránh lỗi DBNull) ---
+        [Column("description")]
         public string? Description { get; set; }
 
         [NotMapped]
         public string Author { get; set; } = "Đang cập nhật";
     }
+
     // --- 2. Model Nhà Xuất Bản ---
     [Table("publishers")]
     public class Publisher
@@ -45,9 +50,8 @@ namespace BookStore.Models
         public int Id { get; set; }
 
         [Column("name")]
-        public string Name { get; set; } = ""; // Thêm = "" để hết cảnh báo vàng
+        public string Name { get; set; } = "";
 
-        // --- THÊM DÒNG NÀY ĐỂ SỬA LỖI ĐỎ ---
         [Column("email")]
         public string Email { get; set; } = "";
     }

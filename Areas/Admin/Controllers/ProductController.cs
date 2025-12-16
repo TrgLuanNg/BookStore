@@ -150,7 +150,9 @@ namespace BookStore.Areas.Admin.Controllers
                 categories = _context.Categories.Select(x => new { x.Id, x.Name }).ToList(),
                 authors = _context.Authors.Select(x => new { x.Id, x.Name }).ToList(),
                 publishers = _context.Publishers.Select(x => new { x.Id, x.Name }).ToList(),
-                suppliers = _context.Suppliers.Select(x => new { x.Id, x.Name }).ToList() // <--- Thêm dòng này
+
+                // --- THÊM DÒNG NÀY ---
+                suppliers = _context.Suppliers.Select(x => new { x.Id, x.Name }).ToList()
             });
         }
     }
