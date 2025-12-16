@@ -133,14 +133,41 @@ namespace BookStore.Areas.Admin.Controllers
         [HttpPost]
         public async Task<IActionResult> Delete(int id)
         {
-            var item = await _context.Books.FindAsync(id);
-            if (item == null) return Json(new { success = false, message = "Không tìm thấy" });
+            try
+            {
+                var item = await _context.Books.FindAsync(id);
+                if (item == null) return Json(new { success = false, message = "Không tìm thấy sản phẩm" });
 
-            // Cần xóa các bảng phụ trước nếu không có Cascade Delete trong DB
-            // (Tuỳ thuộc vào cấu hình DB của bạn, ở đây xoá book nếu DB có set cascade sẽ tự bay bảng phụ)
-            _context.Books.Remove(item);
-            await _context.SaveChangesAsync();
-            return Json(new { success = true });
+                // 1. CHECK AN TOÀN: Kiểm tra xem sách có thực sự nằm trong Đơn hàng nào không?
+                // Nếu có thì TUYỆT ĐỐI KHÔNG XÓA để tránh làm hỏng lịch sử mua hàng.
+                // (Giả sử bảng chi tiết đơn hàng tên là OrderDetails và cột là ProductId)
+                var inOrder = await _context.OrderDetails.AnyAsync(x => x.ProductId == id);
+                if (inOrder)
+                {
+                    return Json(new { success = false, message = "Không thể xóa: Sách này đã phát sinh đơn hàng!" });
+                }
+
+                // 2. Nếu an toàn, tiến hành dọn dẹp các bảng phụ (Tác giả, Thể loại)
+                // SQL không tự xóa giùm nên ta phải code xóa tay trước.
+
+                var relatedAuthors = _context.AuthorDetails.Where(x => x.ProductId == id);
+                _context.AuthorDetails.RemoveRange(relatedAuthors);
+
+                var relatedCats = _context.CategoryDetails.Where(x => x.ProductId == id);
+                _context.CategoryDetails.RemoveRange(relatedCats);
+
+                // 3. Cuối cùng mới xóa Sách
+                _context.Books.Remove(item);
+
+                await _context.SaveChangesAsync();
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                // Ghi rõ lỗi hệ thống để debug
+                var errorMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return Json(new { success = false, message = "Lỗi SQL: " + errorMessage });
+            }
         }
 
         public IActionResult GetAuxData()

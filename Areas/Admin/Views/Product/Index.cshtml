@@ -151,132 +151,76 @@
 
     <script>
         var myModal;
-        var isEditMode = false;
-        var currentEditingId = 0;
-
+        // Khởi tạo Modal khi trang load xong
         $(document).ready(function () {
             var modalEl = document.getElementById('createModal');
             if (modalEl) myModal = new bootstrap.Modal(modalEl);
         });
 
-        // 1. Load dữ liệu Dropdown (Đã thêm load Supplier)
-        function loadAuxData(callback) {
+        // Hàm mở Modal và tải dữ liệu Dropdown
+        function openCreateModal() {
+            // Reset form để nhập mới
+            $('#createForm')[0].reset();
+
+            // Gọi API lấy danh sách NXB, Tác giả, Thể loại
             $.get('/Admin/Product/GetAuxData', function (res) {
-                // NXB
+                // 1. Điền Nhà xuất bản
                 let pubHtml = '<option value="">-- Chọn NXB --</option>';
                 if (res.publishers) res.publishers.forEach(p => { pubHtml += `<option value="${p.id}">${p.name}</option>`; });
                 $('#p_publisher').html(pubHtml);
 
-                // Nhà cung cấp (MỚI)
-                let supHtml = '<option value="">-- Chọn NCC --</option>';
-                if (res.suppliers) res.suppliers.forEach(s => { supHtml += `<option value="${s.id}">${s.name}</option>`; });
-                $('#p_supplier').html(supHtml);
-
-                // Tác giả
+                // 2. Điền Tác giả
                 let authHtml = '';
                 if (res.authors) res.authors.forEach(a => { authHtml += `<option value="${a.id}">${a.name}</option>`; });
                 $('#p_authors').html(authHtml);
 
-                // Thể loại
+                // 3. Điền Thể loại
                 let catHtml = '';
                 if (res.categories) res.categories.forEach(c => { catHtml += `<option value="${c.id}">${c.name}</option>`; });
                 $('#p_categories').html(catHtml);
 
-                if (callback) callback();
+                // Hiện Modal
+                if (myModal) myModal.show();
             });
         }
 
-        // 2. Mở Modal Thêm
-        function openCreateModal() {
-            isEditMode = false;
-            currentEditingId = 0;
-            $('#createForm')[0].reset();
-            $('#p_image').val('images/product/image_1.jpg');
-            $('.modal-title').html('<i class="fas fa-plus me-2"></i>Thêm sản phẩm mới');
-
-            loadAuxData(function () {
-                myModal.show();
-            });
-        }
-
-        // 3. Mở Modal Sửa
-        function openEditModal(id) {
-            isEditMode = true;
-            currentEditingId = id;
-
-            loadAuxData(function () {
-                $.get('/Admin/Product/GetById?id=' + id, function (res) {
-                    if (res.success) {
-                        let d = res.data;
-                        $('#p_name').val(d.name);
-                        $('#p_price').val(d.price);
-                        $('#p_qty').val(d.quantity);
-                        $('#p_image').val(d.imagePath);
-                        $('#p_desc').val(d.description);
-
-                        $('#p_publisher').val(d.publisherId);
-                        $('#p_supplier').val(d.supplierId); // <--- Chọn lại NCC cũ
-
-                        if (res.authors) $('#p_authors').val(res.authors);
-                        if (res.categories) $('#p_categories').val(res.categories);
-
-                        $('.modal-title').html('<i class="fas fa-edit me-2"></i>Cập nhật sản phẩm');
-                        myModal.show();
-                    } else {
-                        alert(res.message);
-                    }
-                });
-            });
-        }
-
-        // 4. Submit (Đã cập nhật lấy SupplierId)
+        // Hàm Gửi dữ liệu về Server (Thêm mới)
         function submitCreate() {
-            let formData = new FormData();
-            if (isEditMode) formData.append("Id", currentEditingId);
+            // Lấy dữ liệu từ form
+            let bookData = {
+                Name: $('#p_name').val(),
+                Price: parseFloat($('#p_price').val()),
+                Quantity: parseInt($('#p_qty').val()),
+                ImagePath: $('#p_image').val() || 'images/default.jpg',
+                Description: $('#p_desc').val(),
+                PublisherId: parseInt($('#p_publisher').val()),
+                SupplierId: 1 // Tạm fix cứng
+            };
 
-            formData.append("Name", $('#p_name').val());
-            formData.append("Price", $('#p_price').val());
-            formData.append("Quantity", $('#p_qty').val());
-            formData.append("ImagePath", $('#p_image').val());
-            formData.append("Description", $('#p_desc').val());
-
-            formData.append("PublisherId", $('#p_publisher').val());
-            formData.append("SupplierId", $('#p_supplier').val()); // <--- Lấy giá trị thật
-
-            let selectedAuthors = $('#p_authors').val();
-            if (selectedAuthors) selectedAuthors.forEach(id => formData.append("authorIds", id));
-
-            let selectedCats = $('#p_categories').val();
-            if (selectedCats) selectedCats.forEach(id => formData.append("categoryIds", id));
-
-            let url = isEditMode ? '/Admin/Product/Edit' : '/Admin/Product/Create';
-
-            $.ajax({
-                url: url,
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                success: function (res) {
-                    if (res.success) {
-                        alert(res.message);
-                        location.reload();
-                    } else {
-                        alert("Lỗi: " + res.message);
-                    }
-                },
-                error: function () {
-                    alert("Lỗi kết nối server!");
+            $.post('/Admin/Product/Create', bookData, function (res) {
+                if (res.success) {
+                    alert(res.message);
+                    location.reload();
+                } else {
+                    alert("Lỗi: " + res.message);
                 }
+            }).fail(function () {
+                alert("Lỗi kết nối server!");
             });
         }
 
-        // 5. Xóa
+        // --- HÀM XÓA (ĐOẠN NÀY ĐANG THIẾU Ở FILE CỦA BẠN) ---
         function deleteProduct(id) {
-            if (confirm("Bạn có chắc chắn muốn xóa?")) {
+            if (confirm("Bạn có chắc chắn muốn xóa sản phẩm này không?")) {
                 $.post('/Admin/Product/Delete', { id: id }, function (res) {
-                    if (res.success) $('#row_' + id).remove();
-                    else alert("Xóa thất bại!");
+                    if (res.success) {
+                        // Xóa dòng tương ứng trên bảng ngay lập tức
+                        $('#row_' + id).fadeOut(300, function () { $(this).remove(); });
+                    } else {
+                        alert("Xóa thất bại: " + (res.message || "Lỗi không xác định"));
+                    }
+                }).fail(function () {
+                    alert("Không thể xóa! Có thể sách này đang có trong đơn hàng.");
                 });
             }
         }
